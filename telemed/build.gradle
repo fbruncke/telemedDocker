@@ -1,0 +1,125 @@
+/*
+ * Copyright (C) 2018 - 2021. Henrik Bærbak Christensen, Aarhus University.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+/*
+ * Build file for Broker Demo applications, by Henrik Baerbak Christensen.
+ */
+
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+  implementation project(':broker')
+
+  // Bind SLF4J it to the Log4J logging framework
+  implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.30'
+
+  // Get MongoDB driver
+  implementation group: 'org.mongodb', name: 'mongo-java-driver',
+      version: '3.12.7'
+
+  testImplementation 'junit:junit:4.13.1'
+  testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
+}
+// === Demo of HTTP/URI Tunnel based TeleMed system
+
+jar {
+  dependsOn(configurations.runtimeClasspath)
+  from {
+    configurations.runtimeClasspath.filter { it.name.endsWith(".jar") }.collect { zipTree(it) }
+  }
+  manifest {
+    attributes 'Main-Class': 'telemed.main.ServerMainHTTP'
+  }
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('serverHttp', JavaExec) {
+  group 'demo'
+  description 'Run Http/URI Tunnel based TeleMed server'
+
+  classpath sourceSets.test.runtimeClasspath
+  mainClass = 'telemed.main.ServerMainHTTP'
+  args db, tls, pehack
+
+  systemProperty("javax.net.ssl.keyStore",
+      "/home/csdev/.keystore")
+  systemProperty("javax.net.ssl.keyStorePassword",
+      "csaucsau")
+}
+
+tasks.register('homeHttp', JavaExec) {
+  group 'demo'
+  description 'Run a single TeleMed client operation (Http)'
+
+  classpath sourceSets.test.runtimeClasspath
+  mainClass = 'telemed.main.HomeClientHTTP'
+  args op, id, sys, dia, host, tls
+
+  systemProperty("javax.net.ssl.trustStore",
+      "/home/csdev/.keystore")
+  systemProperty("javax.net.ssl.trustStorePassword",
+      "csaucsau")
+
+}
+
+tasks.register('serverMq', JavaExec) {
+  group 'demo'
+  description 'Run MQ based TeleMed server'
+
+  classpath sourceSets.test.runtimeClasspath
+  mainClass = 'telemed.main.ServerMainMq'
+  args db, tls, pehack
+
+  systemProperty("javax.net.ssl.keyStore",
+      "/home/csdev/.keystore")
+  systemProperty("javax.net.ssl.keyStorePassword",
+      "csaucsau")
+}
+
+tasks.register('homeMq', JavaExec) {
+  group 'demo'
+  description 'Run a single TeleMed client operation (MQ)'
+
+  classpath sourceSets.test.runtimeClasspath
+  mainClass = 'telemed.main.HomeClientMq'
+  args op, id, sys, dia, host, tls
+
+  systemProperty("javax.net.ssl.trustStore",
+      "/home/csdev/.keystore")
+  systemProperty("javax.net.ssl.trustStorePassword",
+      "csaucsau")
+}
+
+tasks.register('homeMqLoad', JavaExec) {
+  group 'demo'
+  description 'Run a TeleMed client operation (MQ) each 500 ms'
+
+  classpath sourceSets.test.runtimeClasspath
+  mainClass = 'telemed.main.HomeClientsMq'
+
+  systemProperty("javax.net.ssl.trustStore",
+      "/home/csdev/.keystore")
+  systemProperty("javax.net.ssl.trustStorePassword",
+      "csaucsau")
+}
