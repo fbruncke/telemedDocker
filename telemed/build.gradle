@@ -75,12 +75,12 @@ tasks.register('homeHttp', JavaExec) {
   classpath sourceSets.test.runtimeClasspath
   mainClass = 'telemed.main.HomeClientHTTP'
   args op, id, sys, dia, host, tls
-
+/*
   systemProperty("javax.net.ssl.trustStore",
       "/home/csdev/.keystore")
   systemProperty("javax.net.ssl.trustStorePassword",
       "csaucsau")
-
+*/
 }
 
 tasks.register('serverMq', JavaExec) {

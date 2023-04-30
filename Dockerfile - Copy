@@ -1,0 +1,80 @@
+
+
+#FROM henrikbaerbak/jdk17-gradle74 as builder
+FROM gradle:7.6.1-jdk17-focal AS builder
+
+
+LABEL maintainer="fha@easv.dk"
+
+#variables for build and run-time
+ARG SERVER_PORT_NO=4567
+ 
+
+WORKDIR /telemedserver
+
+#COPY broker/src /telemedserver/telemed/broker/src/
+#COPY broker/build.gradle /telemedserver/telemed/broker/
+#COPY telemed/build.gradle     /telemedserver/telemed/telemed/
+#COPY telemed/gradle.properties     /telemedserver/telemed/telemed/
+#COPY telemed/src     /telemedserver/telemed/telemed/src/
+#COPY build.gradle /telemedserver/telemed/
+#COPY settings.gradle /telemedserver/telemed/
+#WORKDIR /telemedserver/telemed/
+
+COPY broker/src broker/src
+COPY broker/build.gradle broker/build.gradle
+COPY telemed/src telemed/src
+COPY telemed/build.gradle telemed/build.gradle
+COPY telemed/gradle.properties telemed/gradle.properties
+COPY build.gradle build.gradle
+COPY settings.gradle settings.gradle
+
+#RUN gradle serverHttp
+#RUN gradle --no-daemon
+
+#execute as part of the build step
+RUN gradle jar
+
+#---------------------------------------------------
+#Create second build container
+#FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-focal
+
+LABEL maintainer="fha@easv.dk"
+
+#Not working ??
+ARG DB_URI=memory
+ENV DB_URI=$DB_URI  
+
+WORKDIR /root
+
+#copy from first container build step
+#COPY --from=builder /telemedserver/telemed/telemed/build/libs/telemed.jar telemed.jar
+COPY --from=builder /telemedserver/telemed/build/libs/telemed.jar telemed.jar
+
+#Expose port no
+EXPOSE $SERVER_PORT_NO
+
+#CMD exec java -jar telemed.jar "memory" false false
+
+#ENTRYPOINT java -jar telemed.jar "memory" false false
+
+RUN echo "java -jar telemed.jar $DB_URI"
+
+#Execute when container is started
+CMD exec java -jar telemed.jar "$DB_TYPE" false false
+#CMD exec java -jar telemed.jar localhost false false
+
+#docker build -t master . --build-arg DB_TYPE=localhost
+#docker build --build-arg DB_TYPE=localhost -t master .
+#docker run -p 4567:4567 -ti --rm master
+
+#docker run -d -p 4567:4567 -ti --name master master
+
+#docker run -ti --rm master bash
+#docker run -p 4567:4567 -ti --rm master bash
+#docker run -p 4567:4567 -ti --rm master
+
+# Build: docker build --build-arg MONGODB_HOST=memory -t telemed .
+# Test:  docker run -ti --rm telemed bash
+# Run:   docker run -d --name telemed -p 4567:4567 telemed

@@ -1,64 +1,38 @@
 
-
-#FROM henrikbaerbak/jdk17-gradle74 as builder
+#First build step, create the Java jar executeable for the final docker image 
 FROM gradle:7.6.1-jdk17-focal AS builder
 
-
+#Set the author details
 LABEL maintainer="fha@easv.dk"
-
-#variables for build and run-time
-ARG SERVER_PORT_NO=4567
- 
 
 WORKDIR /telemedserver
 
-COPY broker/src /telemedserver/telemed/broker/src/
-COPY broker/build.gradle /telemedserver/telemed/broker/
+#Copy needed resources to build Jar file
+COPY broker/src broker/src
+COPY broker/build.gradle broker/build.gradle
+COPY telemed/src telemed/src
+COPY telemed/build.gradle telemed/build.gradle
+COPY telemed/gradle.properties telemed/gradle.properties
+COPY build.gradle build.gradle
+COPY settings.gradle settings.gradle
 
-COPY telemed/build.gradle     /telemedserver/telemed/telemed/
-COPY telemed/gradle.properties     /telemedserver/telemed/telemed/
-COPY telemed/src     /telemedserver/telemed/telemed/src/
-
-COPY build.gradle /telemedserver/telemed/
-COPY settings.gradle /telemedserver/telemed/
-
-WORKDIR /telemedserver/telemed/
-
-#RUN gradle serverHttp
-#RUN gradle --no-daemon
-
-#execute as part of the build step
+#Execute gradle and build the jar file as part of the build step
 RUN gradle jar
 
-#---------------------------------------------------
-#Create second build container
-#FROM openjdk:17-alpine
+#Second build step, builds the docker image, used for distribution 
 FROM eclipse-temurin:17-jre-focal
 
-LABEL maintainer="fha@easv.dk"
+#variables for build and run-time
+ARG DB_URI=memory
+ENV DB_URI=$DB_URI  
 
-#Not working ??
-ARG DB_TYPE=memory
-ENV DB_TYPE=$DB_TYPE  
-
-WORKDIR /home/
+WORKDIR /root
 
 #copy from first container build step
-COPY --from=builder /telemedserver/telemed/telemed/build/libs/telemed.jar telemed.jar
+COPY --from=builder /telemedserver/telemed/build/libs/telemed.jar telemed.jar
 
 #Expose port no
-EXPOSE $SERVER_PORT_NO
+EXPOSE 4567
 
-#CMD exec java -jar telemed.jar "memory" false false
-
-#ENTRYPOINT java -jar telemed.jar "memory" false false
-
-#Execute when container is started
-CMD exec java -jar telemed.jar "$DB_TYPE" false false
-
-#docker build -t master .
-
-#docker run -ti --rm master bash
-#docker run -p 4567:4567 -ti --rm master bash
-#docker run -p 4567:4567 -ti --rm master
-
+#Execute when container is started (Arguments: DB host,TLS,performance hack)
+CMD exec java -jar telemed.jar "$DB_URI" false false
