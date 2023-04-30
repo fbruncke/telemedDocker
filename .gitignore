@@ -1,0 +1,15 @@
+# Project exclude paths
+/.gradle/
+/broker/build/
+/broker/build/classes/java/main/
+/gamelobby/build/
+/gamelobby/build/classes/java/main/
+/gamelobby/build/classes/java/test/
+/gamelobby-rest/build/
+/gamelobby-rest/build/classes/java/main/
+/gamelobby-rest/build/classes/java/test/
+/telemed/build/
+/telemed/build/classes/java/main/
+/telemed/build/classes/java/test/
+/telemed-rest/build/
+/telemed-rest/build/classes/java/main/
